@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36203.30 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkLatency", "NetworkLatency\NetworkLatency.csproj", "{9C7C449F-C9B1-42D1-90D7-874D7C2EC48F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C7C449F-C9B1-42D1-90D7-874D7C2EC48F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C7C449F-C9B1-42D1-90D7-874D7C2EC48F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C7C449F-C9B1-42D1-90D7-874D7C2EC48F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C7C449F-C9B1-42D1-90D7-874D7C2EC48F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {15D780DC-DD97-440E-847E-25820805A2E1}
+	EndGlobalSection
+EndGlobal
