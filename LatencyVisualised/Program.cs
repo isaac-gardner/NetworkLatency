@@ -1,61 +1,91 @@
-﻿// See https://aka.ms/new-console-template for more information
-using Spectre.Console;
+﻿using Spectre.Console;
 using System.Text.Json;
 
-
-
-
-// Step 2: Read and parse the data
-var json = File.ReadAllText("data.json");
+var json = File.ReadAllText("C:\\src\\NetworkLatency\\NetworkLatency\\bin\\Debug\\net8.0\\ping_data.json");
 List<DataPoint> dataPoints = JsonSerializer.Deserialize<List<DataPoint>>(json)!;
 
-// Step 3: Create a Table
-var table = new Table();
-table.AddColumns("Time", "Latency", "Status");
+List<Outage> outages = GetOutagesWithDurations(dataPoints);
 
-foreach (var point in dataPoints)
+while (true)
 {
-    var time = point.Timestamp.ToString("HH:mm:ss");
-    var latency = $"{point.LatencyMs}ms";
-    var status = point.IsDropout ? "[red]DROPOUT[/]" : "[green]OK[/]";
-    table.AddRow(time, latency, status);
-}
+    var avgLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.LatencyMs!.Value); //calculate average 
+    var maxLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.LatencyMs);
+    var dropoutCount = dataPoints.Count(dp => dp.IsDropout);
 
-AnsiConsole.Write(new Panel(table).Header("Latency Table").BorderColor(Color.Grey));
-
-// Step 4: Create a Bar Chart
-var chart = new BarChart()
-    .Label("Latency Over Time")
-    .CenterLabel()
-    .Width(60);
-
-foreach (var point in dataPoints)
-{
-    var label = point.Timestamp.ToString("HH:mm");
-    var color = point.IsDropout ? Color.Red : Color.Green;
-    chart.AddItem(label, point.LatencyMs, color);
-}
-
-AnsiConsole.Write(chart);
-
-// Step 5: Summary Stats Panel
-var avgLatency = dataPoints.Average(dp => dp.LatencyMs);
-var maxLatency = dataPoints.Max(dp => dp.LatencyMs);
-var dropoutCount = dataPoints.Count(dp => dp.IsDropout);
-
-var statsText = new Markup($@"
+    var statsText = new Markup($@"
 [b]Average Latency:[/] {avgLatency:F1}ms  
 [b]Max Latency:[/] {maxLatency}ms  
 [b]Dropouts:[/] [red]{dropoutCount}[/]
 ");
 
-AnsiConsole.Write(new Panel(statsText).Header("Summary").BorderColor(Color.Blue));
+    var table = new Table();
+    table.AddColumn("Start Time");
+    table.AddColumn("End Time");
+    table.AddColumn("Duration (ms)");
 
+    foreach (var outage in outages)
+    {
+        table.AddRow(outage.StartTime.ToString("HH:mm:ss"), outage.EndTime.ToString("HH:mm:ss"), $"{outage.DurationMs}ms");
+    }
 
-// Step 1: Define the model
+    AnsiConsole.Clear();  // Clear the screen before re-drawing
+    AnsiConsole.Write(new Panel(statsText).Header("Summary").BorderColor(Color.Blue));
+    AnsiConsole.Write(table);
+
+    await Task.Delay(8000);
+}
+// Method to calculate dropouts
+List<Outage> GetOutagesWithDurations(List<DataPoint> dataPoints)
+{
+    List<Outage> outages = new List<Outage>();
+    DateTime? outageStart = null;
+
+    foreach (var dp in dataPoints)
+    {
+        if (dp.IsDropout)
+        {
+            if (outageStart == null)
+                outageStart = dp.Timestamp;  // Start of a new dropout
+        }
+        else if (outageStart.HasValue)
+        {
+            // End of the dropout sequence
+            outages.Add(new Outage
+            {
+                StartTime = outageStart.Value,
+                EndTime = dp.Timestamp,
+                DurationMs = (int)(dp.Timestamp - outageStart.Value).TotalMilliseconds
+            });
+
+            // Reset the outage start
+            outageStart = null;
+        }
+    }
+
+    // If the last data point ends with a dropout, add it as an outage
+    if (outageStart.HasValue)
+    {
+        outages.Add(new Outage
+        {
+            StartTime = outageStart.Value,
+            EndTime = dataPoints.Last().Timestamp,
+            DurationMs = (int)(dataPoints.Last().Timestamp - outageStart.Value).TotalMilliseconds
+        });
+    }
+
+    return outages;
+}
+
+class Outage
+{
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public int DurationMs { get; set; }
+}
+
 class DataPoint
 {
     public DateTime Timestamp { get; set; }
-    public int LatencyMs { get; set; }
+    public int? LatencyMs { get; set; }
     public bool IsDropout { get; set; }
 }

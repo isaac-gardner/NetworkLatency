@@ -1,96 +1,166 @@
 ﻿
 using Newtonsoft.Json;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 
 string server = "8.8.8.8"; // Google DNS or another stable server
-        var ping = new Ping();
-        var pingDataList = new List<PingData>();
-        int consecutiveFailures = 0;
-        const int maxFailuresBeforeDropout = 3; // Consider dropout after 3 consecutive failures
+string localGateway = "192.168.178.1";
 
-        // File to store JSON data
-        string filePath = "ping_data.json";
+var pingDataList = new List<PingData>();
+int consecutiveFailures = 0;
+const int maxFailuresBeforeDropout = 3; // Consider dropout after 3 consecutive failures
 
-        // Start collecting data every 1 second
-        Timer timer = new Timer(_ =>
-        {
-            PingData data = MeasurePing(ping, server, ref consecutiveFailures, maxFailuresBeforeDropout);
-            pingDataList.Add(data);
+// File to store JSON data
+string filePath = "ping_data.json";
 
-            // Optional: Serialize to file after every 10 data points
-            if (pingDataList.Count % 10 == 0)
-            {
-                SerializeData(pingDataList, filePath);
-            }
 
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+// Start collecting data every 1 second
+Timer timer = new Timer(_ =>
+{
+    _ = CollectPingDataAsync(); // Fire-and-forget async call
+}, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
 
-        Console.WriteLine("Press any key to stop...");
-        Console.ReadKey();
+Console.WriteLine("Press any key to stop...");
+Console.ReadKey();
 
-        // Final serialize before exit
-        SerializeData(pingDataList, filePath);
- 
+// Final serialize before exit
+SerializeData(pingDataList, filePath);
 
-    static PingData MeasurePing(Ping ping, string server, ref int consecutiveFailures, int maxFailuresBeforeDropout)
+// Define the async method
+async Task CollectPingDataAsync()
+{
+    try
     {
-        PingData data = new PingData
-        {
-            Timestamp = DateTime.Now
-        };
+        PingData data = await MeasurePingAsync(server, localGateway, new PingState(), new PingState(), maxFailuresBeforeDropout);
+        pingDataList.Add(data);
 
-        try
+        if (pingDataList.Count % 10 == 0)
         {
-            PingReply reply = ping.Send(server);
-            if (reply.Status == IPStatus.Success)
-            {
-                data.LatencyMs = reply.RoundtripTime;
-                data.IsDropout = false;
-                consecutiveFailures = 0; // Reset failures on success
-            }
-            else
-            {
-                // Handle other non-success status codes
-                data.LatencyMs = null;
-                data.IsDropout = true;
-                consecutiveFailures++;
-            }
+            SerializeData(pingDataList, filePath);
         }
-        catch (Exception)
-        {
-            // Handle exceptions (e.g., no network)
-            data.LatencyMs = null;
-            data.IsDropout = true;
-            consecutiveFailures++;
-        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error collecting ping data: {ex.Message}");
+    }
+}
 
-        // If we reach the dropout threshold, consider it a true dropout (set IsDropout to true)
-        if (consecutiveFailures >= maxFailuresBeforeDropout)
-        {
-            data.IsDropout = true;
-        }
 
+
+static async Task<PingData> MeasurePingAsync(string server, string localGateway, PingState serverPingState, PingState gatewayPingState, int maxFailuresBeforeDropout)
+{
+    PingData data = new PingData
+    {
+        Timestamp = DateTime.Now
+    };
+    var pingServer = new Ping();
+    var pingGateway = new Ping();
+
+    Task<PingReply>? serverPingTask = null;
+    Task<PingReply>? gatewayPingTask = null;
+
+    try
+    {
+        serverPingTask = pingServer.SendPingAsync(server);
+        gatewayPingTask = pingGateway.SendPingAsync(localGateway);
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Error starting ping tasks: {e.Message}");
+        data.LatencyMs = null;
+        data.IsDropout = true;
+        serverPingState.AddFailure();
+        gatewayPingState.AddFailure();
         return data;
     }
 
-    static void SerializeData(List<PingData> dataList, string filePath)
+    PingReply? serverPingReply = null;
+    PingReply? gatewayPingReply = null;
+
+    try
     {
-        try
-        {
-            // Serialize data to JSON
-            string json = JsonConvert.SerializeObject(dataList, Formatting.Indented);
-            File.WriteAllText(filePath, json);
-            Console.WriteLine($"Serialized {dataList.Count} entries to {filePath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error serializing data: {ex.Message}");
-        }
+        serverPingReply = await serverPingTask;
     }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Ping {server} failed: {e.Message}");
+    }
+
+    try
+    {
+        gatewayPingReply = await gatewayPingTask;
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Ping {localGateway} failed: {e.Message}");
+    }
+
+
+    if (serverPingReply?.Status == IPStatus.Success)
+    {
+        data.LatencyMs = serverPingReply.RoundtripTime;
+        data.IsDropout = false;
+        serverPingState.Reset(); // Reset failures on success
+    }
+    else
+    {
+        // Handle other non-success status codes
+        data.LatencyMs = null;
+        data.IsDropout = true;
+        serverPingState.AddFailure();
+    }
+
+    if (gatewayPingReply?.Status == IPStatus.Success)
+    {
+        data.LatencyMs = gatewayPingReply.RoundtripTime;
+        data.IsDropout = false;
+        gatewayPingState.Reset();
+    }
+    else
+    {
+        data.LatencyMs = null;
+        data.IsDropout = true;
+        gatewayPingState.AddFailure();
+    }
+
+    if (gatewayPingReply?.Status == IPStatus.Success && serverPingReply?.Status != IPStatus.Success) 
+        data.IsInternet = true;
+
+    return data;
+}
+
+ 
+
+static void SerializeData(List<PingData> dataList, string filePath)
+{
+    try
+    {
+        // Serialize data to JSON
+        string json = JsonConvert.SerializeObject(dataList, Formatting.Indented);
+        File.WriteAllText(filePath, json);
+        Console.WriteLine($"Serialized {dataList.Count} entries to {filePath}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error serializing data: {ex.Message}");
+    }
+}
 
 public class PingData
 {
     public DateTime Timestamp { get; set; }
     public long? LatencyMs { get; set; }
-    public bool IsDropout { get; set; }
+    public bool IsDropout { get; set; } = false;
+
+    public bool IsInternet { get; set; } = false;
+}
+
+class PingState
+{
+    private int _consecutiveFailures = 0;
+    public int ConsecutiveFailures => _consecutiveFailures;
+
+    public void AddFailure() => _consecutiveFailures++;
+
+    public void Reset() => _consecutiveFailures = 0;
 }
