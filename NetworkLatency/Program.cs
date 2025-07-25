@@ -116,13 +116,13 @@ static async Task<PingData> MeasurePingAsync(string server, string localGateway,
 
     if (gatewayPingReply?.Status == IPStatus.Success)
     {
-        data.ServerLatencyMs = gatewayPingReply.RoundtripTime;
+        data.GatewayLatency = gatewayPingReply.RoundtripTime;
         data.IsDropout = false;
         gatewayPingState.Reset();
     }
     else
     {
-        data.ServerLatencyMs = null;
+        data.GatewayLatency = null;
         data.IsDropout = true;
         gatewayPingState.AddFailure();
     }

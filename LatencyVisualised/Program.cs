@@ -11,11 +11,15 @@ while (true)
 {
     var avgServerLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.ServerLatencyMs!.Value); //calculate average 
     var maxSeverLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.ServerLatencyMs);
+    var avgGwLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.GatewayLatency!.Value); //calculate average 
+    var maxGwLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.GatewayLatency);
     var dropoutCount = dataPoints.Count(dp => dp.IsDropout);
 
     var statsText = new Markup($@"
-[b]Average Latency:[/] {avgServerLatency:F1}ms  
-[b]Max Latency:[/] {maxSeverLatency}ms  
+[b]Average internet Latency:[/] {avgServerLatency:F1}ms  
+[b]Average gateway Latency:[/] {avgGwLatency:F1}ms  
+[b]Max internet Latency:[/] {maxSeverLatency}ms  
+[b]Max gateway Latency:[/] {maxGwLatency}ms  
 [b]Dropouts:[/] [red]{dropoutCount}[/]
 ");
 
