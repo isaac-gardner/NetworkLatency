@@ -57,13 +57,15 @@ while (true)
 [b]Max internet Latency:[/] [{(maxSeverLatency > 70 ? "yellow" :"white")}]{maxSeverLatency}ms[/] 
 [b]Last internet Latency:[/] [{(lastServerLatency > 100 ?"red" : "white")}]{lastServerLatency}ms[/] 
 
-[b]Dropouts:[/] [{(internetDropout > 0 ? "white":"white")}]{internetDropout}[/]
+[b]Dropouts:[/] [{(internetDropout > 0 ? "red":"white")}]{internetDropout}[/]
 ");
 
     var gw = new Markup($@"
 [b]Average gateway Latency:[/] {avgGwLatency:F1}ms  
 [b]Max gateway Latency:[/] [{(maxGwLatency > 20 ? "orange" : "white")}]{maxGwLatency}ms[/]
-[b]Last gateway Latency:[/] [{(lastGwLatency > 50 ? "red":"white")}]{lastGwLatency}ms[/]  
+[b]Last gateway Latency:[/] [{(lastGwLatency > 50 ? "red":"white")}]{lastGwLatency}ms[/]
+
+[b]Dropouts:[/] [{(gwDropout > 0 ? "red" : "white")}]{internetDropout}[/]
 ");
 
     var table = new Table();
@@ -78,9 +80,11 @@ while (true)
 
     AnsiConsole.Clear();  // Clear the screen before re-drawing
     AnsiConsole.Write(new Panel(internet).Header("Internet").BorderColor(Color.Blue));
+    AnsiConsole.Write(new Panel(gw).Header("Gateway").BorderColor(Color.Magenta3_2));
+
     AnsiConsole.Write(table);
 
-    await Task.Delay(8000);
+    await Task.Delay(5000);
 }
 // Method to calculate dropouts
 List<Outage> GetOutagesWithDurations(List<PingData> dataPoints)
