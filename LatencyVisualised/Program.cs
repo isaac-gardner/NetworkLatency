@@ -9,10 +9,10 @@ List<Outage> outages = GetOutagesWithDurations(dataPoints);
 
 while (true)
 {
-    var avgServerLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.ServerLatencyMs!.Value); //calculate average 
-    var maxSeverLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.ServerLatencyMs);
-    var avgGwLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.GatewayLatency!.Value); //calculate average 
-    var maxGwLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.GatewayLatency);
+    var avgServerLatency = dataPoints.Where(dp => dp.ServerLatencyMs.HasValue).Average(dp => dp.ServerLatencyMs!.Value); //calculate average 
+    var maxSeverLatency = dataPoints.Where(dp => dp.ServerLatencyMs.HasValue).Max(dp => dp.ServerLatencyMs);
+    var avgGwLatency = dataPoints.Where(dp => dp.GatewayLatency.HasValue).Average(dp => dp.GatewayLatency!.Value); //calculate average 
+    var maxGwLatency = dataPoints.Where(dp => dp.GatewayLatency.HasValue).Max(dp => dp.GatewayLatency);
     var dropoutCount = dataPoints.Count(dp => dp.IsDropout);
 
     var statsText = new Markup($@"
