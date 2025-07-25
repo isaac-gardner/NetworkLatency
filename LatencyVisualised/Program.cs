@@ -1,20 +1,21 @@
-﻿using Spectre.Console;
+﻿using Shared;
+using Spectre.Console;
 using System.Text.Json;
 
 var json = File.ReadAllText("C:\\src\\NetworkLatency\\NetworkLatency\\bin\\Debug\\net8.0\\ping_data.json");
-List<DataPoint> dataPoints = JsonSerializer.Deserialize<List<DataPoint>>(json)!;
+List<PingData> dataPoints = JsonSerializer.Deserialize<List<PingData>>(json)!;
 
 List<Outage> outages = GetOutagesWithDurations(dataPoints);
 
 while (true)
 {
-    var avgLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.LatencyMs!.Value); //calculate average 
-    var maxLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.LatencyMs);
+    var avgServerLatency = dataPoints.Where(dp => dp.IsDropout == false).Average(dp => dp.ServerLatencyMs!.Value); //calculate average 
+    var maxSeverLatency = dataPoints.Where(dp => dp.IsDropout == false).Max(dp => dp.ServerLatencyMs);
     var dropoutCount = dataPoints.Count(dp => dp.IsDropout);
 
     var statsText = new Markup($@"
-[b]Average Latency:[/] {avgLatency:F1}ms  
-[b]Max Latency:[/] {maxLatency}ms  
+[b]Average Latency:[/] {avgServerLatency:F1}ms  
+[b]Max Latency:[/] {maxSeverLatency}ms  
 [b]Dropouts:[/] [red]{dropoutCount}[/]
 ");
 
@@ -35,7 +36,7 @@ while (true)
     await Task.Delay(8000);
 }
 // Method to calculate dropouts
-List<Outage> GetOutagesWithDurations(List<DataPoint> dataPoints)
+List<Outage> GetOutagesWithDurations(List<PingData> dataPoints)
 {
     List<Outage> outages = new List<Outage>();
     DateTime? outageStart = null;
@@ -83,9 +84,3 @@ class Outage
     public int DurationMs { get; set; }
 }
 
-class DataPoint
-{
-    public DateTime Timestamp { get; set; }
-    public int? LatencyMs { get; set; }
-    public bool IsDropout { get; set; }
-}

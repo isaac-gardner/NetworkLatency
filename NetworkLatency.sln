@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36203.30 d17.14
+VisualStudioVersion = 17.14.36203.30
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkLatency", "NetworkLatency\NetworkLatency.csproj", "{9C7C449F-C9B1-42D1-90D7-874D7C2EC48F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LatencyVisualised", "LatencyVisualised\LatencyVisualised.csproj", "{2955F012-1D47-D200-AAC0-971A366BFF22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{104742EF-70D5-47F8-8F02-F4B9A0A536A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{2955F012-1D47-D200-AAC0-971A366BFF22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2955F012-1D47-D200-AAC0-971A366BFF22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2955F012-1D47-D200-AAC0-971A366BFF22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{104742EF-70D5-47F8-8F02-F4B9A0A536A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{104742EF-70D5-47F8-8F02-F4B9A0A536A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{104742EF-70D5-47F8-8F02-F4B9A0A536A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{104742EF-70D5-47F8-8F02-F4B9A0A536A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

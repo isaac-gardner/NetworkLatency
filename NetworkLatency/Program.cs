@@ -1,5 +1,7 @@
 ﻿
 using Newtonsoft.Json;
+using Shared;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 
@@ -51,6 +53,8 @@ static async Task<PingData> MeasurePingAsync(string server, string localGateway,
 {
     PingData data = new PingData
     {
+        Server = server,
+        Gateway = localGateway,
         Timestamp = DateTime.Now
     };
     var pingServer = new Ping();
@@ -67,7 +71,7 @@ static async Task<PingData> MeasurePingAsync(string server, string localGateway,
     catch (Exception e)
     {
         Console.WriteLine($"Error starting ping tasks: {e.Message}");
-        data.LatencyMs = null;
+        data.ServerLatencyMs = null;
         data.IsDropout = true;
         serverPingState.AddFailure();
         gatewayPingState.AddFailure();
@@ -98,27 +102,27 @@ static async Task<PingData> MeasurePingAsync(string server, string localGateway,
 
     if (serverPingReply?.Status == IPStatus.Success)
     {
-        data.LatencyMs = serverPingReply.RoundtripTime;
+        data.ServerLatencyMs = serverPingReply.RoundtripTime;
         data.IsDropout = false;
         serverPingState.Reset(); // Reset failures on success
     }
     else
     {
         // Handle other non-success status codes
-        data.LatencyMs = null;
+        data.ServerLatencyMs = null;
         data.IsDropout = true;
         serverPingState.AddFailure();
     }
 
     if (gatewayPingReply?.Status == IPStatus.Success)
     {
-        data.LatencyMs = gatewayPingReply.RoundtripTime;
+        data.ServerLatencyMs = gatewayPingReply.RoundtripTime;
         data.IsDropout = false;
         gatewayPingState.Reset();
     }
     else
     {
-        data.LatencyMs = null;
+        data.ServerLatencyMs = null;
         data.IsDropout = true;
         gatewayPingState.AddFailure();
     }
@@ -146,14 +150,6 @@ static void SerializeData(List<PingData> dataList, string filePath)
     }
 }
 
-public class PingData
-{
-    public DateTime Timestamp { get; set; }
-    public long? LatencyMs { get; set; }
-    public bool IsDropout { get; set; } = false;
-
-    public bool IsInternet { get; set; } = false;
-}
 
 class PingState
 {
